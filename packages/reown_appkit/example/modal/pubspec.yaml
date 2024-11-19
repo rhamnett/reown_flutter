@@ -3,8 +3,10 @@ description: "Reown's AppKit modal example"
 
 publish_to: 'none'
 
+version: 1.0.0+1
+
 environment:
-  sdk: ">=3.0.1 <4.0.0"
+  sdk: '>=3.0.1 <4.0.0'
 
 dependencies:
   cupertino_icons: ^1.0.2
@@ -16,10 +18,11 @@ dependencies:
   reown_appkit:
     path: ../..
   shared_preferences: ^2.2.0
+  video_player: ^2.9.2
 
 dev_dependencies:
   build_runner: ^2.4.7
-  flutter_launcher_icons: "^0.13.1"
+  flutter_launcher_icons: '^0.13.1'
   flutter_lints: ^3.0.1
   flutter_test:
     sdk: flutter
@@ -32,8 +35,10 @@ flutter:
 
   assets:
     - assets/abis/
+    - assets/movie.mp4
+    - assets/logo.png
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/AppIcon.png"
+  image_path: 'assets/AppIcon.png'
