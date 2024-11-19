@@ -218,23 +218,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // See https://docs.reown.com/appkit/flutter/core/custom-chains
     // final testNetworks = ReownAppKitModalNetworks.test['eip155'] ?? [];
-    // final testNetworks = [];
+    final testNetworks = <ReownAppKitModalNetworkInfo>[];
 
-    // // Add this network as the first entry
-    // final etherlink = ReownAppKitModalNetworkInfo(
-    //   name: 'Etherlink',
-    //   chainId: '42793',
-    //   currency: 'XTZ',
-    //   rpcUrl: 'https://node.mainnet.etherlink.com',
-    //   explorerUrl: 'https://etherlink.io',
-    //   chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
-    //   isTestNetwork: false,
-    // );
+    // Add this network as the first entry
+    final etherlink = ReownAppKitModalNetworkInfo(
+      name: 'Etherlink',
+      chainId: '42793',
+      currency: 'XTZ',
+      rpcUrl: 'https://node.mainnet.etherlink.com',
+      explorerUrl: 'https://etherlink.io',
+      chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
+      isTestNetwork: false,
+    );
 
-    // testNetworks.insert(0, etherlink); // Insert at the beginning
+    testNetworks.insert(0, etherlink); // Insert at the beginning
 
-    // ReownAppKitModalNetworks.addSupportedNetworks(
-    //     'eip155', testNetworks.cast<ReownAppKitModalNetworkInfo>());
+    ReownAppKitModalNetworks.addSupportedNetworks('eip155', testNetworks);
 
     //add etherlink
 
@@ -242,7 +241,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _appKitModal = ReownAppKitModal(
         context: context,
         projectId: DartDefines.projectId,
-        logLevel: LogLevel.error,
+        logLevel: LogLevel.all,
         metadata: _pairingMetadata(),
         siweConfig: _siweConfig(siweAuthValue),
         enableAnalytics: analyticsValue, // OPTIONAL - null by default
@@ -317,7 +316,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _appKitModal.appKit!.core.relayClient.onRelayClientDisconnect.subscribe(
       _onRelayClientDisconnect,
     );
-    _appKitModal.appKit!.core.addLogListener(_logListener);
+    // _appKitModal.appKit!.core.addLogListener(_logListener);
 
     //
     await _appKitModal.init();
@@ -328,15 +327,15 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
-  void _logListener(event) {
-    if ('${event.level}' == 'Level.debug' ||
-        '${event.level}' == 'Level.error') {
-      // TODO send to mixpanel
-      log('${event.message}');
-    } else {
-      debugPrint('${event.message}');
-    }
-  }
+  // void _logListener(event) {
+  //   if ('${event.level}' == 'Level.debug' ||
+  //       '${event.level}' == 'Level.error') {
+  //     // TODO send to mixpanel
+  //     log('${event.message}');
+  //   } else {
+  //     debugPrint('${event.message}');
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -353,7 +352,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
 
     // Unsubscribe from all events
-    _appKitModal.appKit!.core.removeLogListener(_logListener);
+    // _appKitModal.appKit!.core.removeLogListener(_logListener);
     _appKitModal.appKit!.core.relayClient.onRelayClientConnect
         .unsubscribe(_onRelayClientConnect);
     _appKitModal.appKit!.core.relayClient.onRelayClientError
