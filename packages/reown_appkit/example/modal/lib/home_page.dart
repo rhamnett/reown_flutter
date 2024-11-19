@@ -525,7 +525,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _notifyWalletConnected(
       ReownAppKitModalSession? session, DateTime timestamp) async {
     debugPrint('THIS WOULD BE SDK CALL');
-    debugPrint('Session: ${session?.email}');
+    final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
+      session?.chainId ?? '1',
+    );
+    debugPrint('Session: ${session?.getAddress(namespace)}');
 
     if (session == null) return;
 
@@ -740,10 +743,30 @@ class _ButtonsView extends StatelessWidget {
         if (appKit.isConnected)
           ElevatedButton(
             onPressed: () {
-              final address = appKit.session!
-                  .getAddress(appKit.selectedChain?.chainId ?? '1');
-              (context.findAncestorStateOfType<_MyHomePageState>())
-                  ?.getLoyalty(address!);
+              debugPrint('Selected Chain ID: ${appKit.selectedChain?.chainId}');
+              debugPrint(
+                  'Session: ${appKit.session?.toJson()}'); // Add this to see full session data
+
+              final chainId = appKit.selectedChain?.chainId ?? '1';
+              final namespace =
+                  ReownAppKitModalNetworks.getNamespaceForChainId(chainId);
+              debugPrint('Namespace: $namespace');
+
+              final address = appKit.session?.getAddress(namespace);
+              debugPrint('Address from namespace: $address');
+
+              if (address != null) {
+                (context.findAncestorStateOfType<_MyHomePageState>())
+                    ?.getLoyalty(address);
+              } else {
+                debugPrint('Error: Could not get wallet address');
+                // Optionally show an error message to the user
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Could not get wallet address'),
+                  ),
+                );
+              }
             },
             child: const Text('Show Perks'),
           ),
@@ -771,7 +794,7 @@ class _ConnectedView extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        AppKitModalAccountButton(appKitModal: appKit),
+        // AppKitModalAccountButton(appKitModal: appKit),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -786,6 +809,7 @@ class _ConnectedView extends StatelessWidget {
             ),
           ],
         ),
+
         const SizedBox.square(dimension: 5.0),
         // Pass the NFT list here
         _NFTGridView(nftList: nftList),
@@ -984,21 +1008,33 @@ class _VideoControlsState extends State<_VideoControls>
   Future<void> _handleGoPress() async {
     final appKit = widget.appKit;
     if (!appKit.isConnected) {
-      debugPrint('Setting pending action: mint'); // Debug log
+      debugPrint('Setting pending action: mint');
       final homeState = context.findAncestorStateOfType<_MyHomePageState>();
       if (homeState != null) {
         homeState._pendingAction = 'mint';
         appKit.openModalView(ReownAppKitModalMainWalletsPage());
       }
     } else {
-      final address =
-          appKit.session!.getAddress(appKit.selectedChain?.chainId ?? '1');
-      final email = appKit.session!.email;
-      (context.findAncestorStateOfType<_MyHomePageState>())
-          ?.mintToken(address!, email);
+      final chainId = appKit.selectedChain?.chainId ?? '1';
+      final namespace =
+          ReownAppKitModalNetworks.getNamespaceForChainId(chainId);
+      final address = appKit.session?.getAddress(namespace);
+      final email = appKit.session?.email;
 
-      // Show success animation and slide out
-      showSuccess();
+      if (address != null) {
+        (context.findAncestorStateOfType<_MyHomePageState>())
+            ?.mintToken(address, email!);
+        // Show success animation and slide out
+        showSuccess();
+      } else {
+        debugPrint('Error: Could not get wallet address');
+        // Optionally show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not get wallet address'),
+          ),
+        );
+      }
     }
   }
 
