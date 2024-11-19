@@ -340,29 +340,37 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void dispose() {
+    debugPrint(
+        '[ExampleApp] Disposing _MyHomePageState and initiating disconnect.');
+
     _videoController.dispose();
-    //
+
+    // Initiate disconnect and log the outcome
+    _appKitModal.disconnect().then((_) {
+      debugPrint('[ExampleApp] Successfully disconnected from session.');
+    }).catchError((error) {
+      debugPrint('[ExampleApp] Error while disconnecting: $error');
+    });
+
+    // Unsubscribe from all events
     _appKitModal.appKit!.core.removeLogListener(_logListener);
-    _appKitModal.appKit!.core.relayClient.onRelayClientConnect.unsubscribe(
-      _onRelayClientConnect,
-    );
-    _appKitModal.appKit!.core.relayClient.onRelayClientError.unsubscribe(
-      _onRelayClientError,
-    );
-    _appKitModal.appKit!.core.relayClient.onRelayClientDisconnect.unsubscribe(
-      _onRelayClientDisconnect,
-    );
-    //
+    _appKitModal.appKit!.core.relayClient.onRelayClientConnect
+        .unsubscribe(_onRelayClientConnect);
+    _appKitModal.appKit!.core.relayClient.onRelayClientError
+        .unsubscribe(_onRelayClientError);
+    _appKitModal.appKit!.core.relayClient.onRelayClientDisconnect
+        .unsubscribe(_onRelayClientDisconnect);
+
     _appKitModal.onModalConnect.unsubscribe(_onModalConnect);
     _appKitModal.onModalUpdate.unsubscribe(_onModalUpdate);
     _appKitModal.onModalNetworkChange.unsubscribe(_onModalNetworkChange);
     _appKitModal.onModalDisconnect.unsubscribe(_onModalDisconnect);
     _appKitModal.onModalError.unsubscribe(_onModalError);
-    //
+
     _appKitModal.onSessionExpireEvent.unsubscribe(_onSessionExpired);
     _appKitModal.onSessionUpdateEvent.unsubscribe(_onSessionUpdate);
     _appKitModal.onSessionEventEvent.unsubscribe(_onSessionEvent);
-    //
+
     super.dispose();
   }
 
@@ -455,11 +463,11 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
     debugPrint('[ExampleApp] _onModalConnect ${event?.session.toJson()}');
 
-    // notify m1nty API that a wallet has connected
-    _notifyWalletConnected(event?.session, DateTime.now());
+    // // notify m1nty API that a wallet has connected
+    // _notifyWalletConnected(event?.session, DateTime.now());
 
-    // Handle pending action immediately after connection
-    _handlePendingAction();
+    // // Handle pending action immediately after connection
+    // _handlePendingAction();
   }
 
   void _onModalUpdate(ModalConnect? event) {
@@ -474,7 +482,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onModalDisconnect(ModalDisconnect? event) {
-    debugPrint('[ExampleApp] _onModalDisconnect ${event?.toString()}');
+    debugPrint('[ExampleApp] _onModalDisconnect triggered.');
+    debugPrint('[ExampleApp] Disconnect event details: ${event?.toString()}');
+
+    // Log current session state before disconnect
+    debugPrint(
+        '[ExampleApp] Session before disconnect: ${_appKitModal.session?.toJson()}');
+
     setState(() {});
   }
 
@@ -525,6 +539,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _notifyWalletConnected(
       ReownAppKitModalSession? session, DateTime timestamp) async {
     debugPrint('THIS WOULD BE SDK CALL');
+
+    if (session != null) return;
+
     final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
       session?.chainId ?? '1',
     );
