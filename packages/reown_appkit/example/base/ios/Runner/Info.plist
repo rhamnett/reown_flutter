@@ -11,7 +11,7 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>com.walletconnect.flutterdapp</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
@@ -43,9 +43,53 @@
 	<string></string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
+		<string>wirexwallet</string>
+		<string>stasis</string>
+		<string>omni</string>
+		<string>strikex</string>
+		<string>bitcoincom</string>
+		<string>bnc</string>
+		<string>kryptogo</string>
+		<string>roninwallet</string>
+		<string>moonstake</string>
+		<string>ripio</string>
+		<string>frontier</string>
+		<string>qubic</string>
+		<string>dropp</string>
+		<string>safepalwallet</string>
+		<string>bee</string>
+		<string>shido</string>
+		<string>foxwallet</string>
+		<string>exodus</string>
+		<string>coolwallet</string>
+		<string>shinobi-wallet</string>
+		<string>halowallet</string>
+		<string>spotonchain</string>
+		<string>rainbow</string>
+		<string>obvious</string>
+		<string>robinhood-wallet</string>
+		<string>cbwallet</string>
+		<string>okto</string>
+		<string>bitkeep</string>
+		<string>bitizen</string>
+		<string>ape</string>
+		<string>uniswap</string>
+		<string>zerion</string>
+		<string>oasys-wallet</string>
+		<string>coinstats</string>
+		<string>ledgerlive</string>
+		<string>safe</string>
+		<string>okex</string>
+		<string>trust</string>
+		<string>thorwallet</string>
+		<string>krakenwallet</string>
+		<string>coinwallet</string>
+		<string>mewwallet</string>
+		<string>metamask</string>
+		<string>avacus</string>
+		<string>walletapp</string>
 		<string>wcflutterwallet</string>
-        <string>walletapp</string>
-        <string>m1nty</string>
+		<string>rn-web3wallet</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
@@ -55,20 +99,20 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<false/>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
 </dict>
 </plist>
