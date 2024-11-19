@@ -252,8 +252,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
     final emailWalletValue = prefs.getBool('appkit_email_wallet') ?? true;
-    // final siweAuthValue = prefs.getBool('appkit_siwe_auth') ?? true;
-    final siweAuthValue = false;
+    final siweAuthValue = prefs.getBool('appkit_siwe_auth') ?? true;
+    // final siweAuthValue = false;
 
     ReownAppKitModalNetworks.removeTestNetworks();
 
