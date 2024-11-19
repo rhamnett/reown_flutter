@@ -260,22 +260,22 @@ class _MyHomePageState extends State<MyHomePage> {
     ReownAppKitModalNetworks.removeSupportedNetworks('solana');
     // See https://docs.reown.com/appkit/flutter/core/custom-chains
     // final testNetworks = ReownAppKitModalNetworks.test['eip155'] ?? [];
-    final testNetworks = <ReownAppKitModalNetworkInfo>[];
+    // final testNetworks = <ReownAppKitModalNetworkInfo>[];
 
-    // Add this network as the first entry
-    final etherlink = ReownAppKitModalNetworkInfo(
-      name: 'Etherlink',
-      chainId: '42793',
-      currency: 'XTZ',
-      rpcUrl: 'https://node.mainnet.etherlink.com',
-      explorerUrl: 'https://etherlink.io',
-      chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
-      isTestNetwork: false,
-    );
+    // // Add this network as the first entry
+    // final etherlink = ReownAppKitModalNetworkInfo(
+    //   name: 'Etherlink',
+    //   chainId: '42793',
+    //   currency: 'XTZ',
+    //   rpcUrl: 'https://node.mainnet.etherlink.com',
+    //   explorerUrl: 'https://etherlink.io',
+    //   chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
+    //   isTestNetwork: false,
+    // );
 
-    testNetworks.insert(0, etherlink); // Insert at the beginning
+    // testNetworks.insert(0, etherlink); // Insert at the beginning
 
-    ReownAppKitModalNetworks.addSupportedNetworks('eip155', testNetworks);
+    // ReownAppKitModalNetworks.addSupportedNetworks('eip155', testNetworks);
 
     //add etherlink
 
