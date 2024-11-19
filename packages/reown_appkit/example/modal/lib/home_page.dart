@@ -250,7 +250,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // Clear all shared preferences
     // await prefs.clear();
 
-    final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
+    // final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
+    final analyticsValue = false;
     final emailWalletValue = prefs.getBool('appkit_email_wallet') ?? true;
     // final siweAuthValue = prefs.getBool('appkit_siwe_auth') ?? true;
     final siweAuthValue = false;
@@ -258,8 +259,6 @@ class _MyHomePageState extends State<MyHomePage> {
     ReownAppKitModalNetworks.removeTestNetworks();
 
     ReownAppKitModalNetworks.removeSupportedNetworks('solana');
-    // See https://docs.reown.com/appkit/flutter/core/custom-chains
-    // final testNetworks = ReownAppKitModalNetworks.test['eip155'] ?? [];
     // final testNetworks = <ReownAppKitModalNetworkInfo>[];
 
     // // Add this network as the first entry
@@ -310,26 +309,25 @@ class _MyHomePageState extends State<MyHomePage> {
                       NetworkUtils.defaultNetworkMethods['eip155']!.toList(),
                   'events':
                       NetworkUtils.defaultNetworkEvents['eip155']!.toList(),
-                }),
-                'solana': RequiredNamespace.fromJson({
-                  'chains': ReownAppKitModalNetworks.getAllSupportedNetworks(
-                    namespace: 'solana',
-                  ).map((chain) => 'solana:${chain.chainId}').toList(),
-                  'methods':
-                      NetworkUtils.defaultNetworkMethods['solana']!.toList(),
-                  'events': [],
-                }),
-                'polkadot': RequiredNamespace.fromJson({
-                  'chains': [
-                    'polkadot:91b171bb158e2d3848fa23a9f1c25182',
-                    'polkadot:e143f23803ac50e8f6f8e62695d1ce9e'
-                  ],
-                  'methods': [
-                    'polkadot_signMessage',
-                    'polkadot_signTransaction',
-                  ],
-                  'events': []
-                }),
+                })
+                // 'solana': RequiredNamespace.fromJson({
+                //   'chains': ReownAppKitModalNetworks.getAllSupportedNetworks(
+                //     namespace: 'solana',
+                //   ).map((chain) => 'solana:${chain.chainId}').toList(),
+                //   'methods':
+                //       NetworkUtils.defaultNetworkMethods['solana']!.toList(),
+                //   'events': [],
+                // }),
+                // 'polkadot': RequiredNamespace.fromJson({
+                //   'chains': [
+                //     'polkadot:91b171bb158e2d3848fa23a9f1c25182',
+                //     'polkadot:e143f23803ac50e8f6f8e62695d1ce9e'
+                //   ],
+                //   'methods': [
+                //     'polkadot_signMessage',
+                //     'polkadot_signTransaction',
+                //   ],
+                //   'events': []
               },
         includedWalletIds: {
           // 'f71e9b2c658264f7c6dfe938bbf9d2a025acc7ba4245eea2356e2995b1fd24d3', // m1nty
