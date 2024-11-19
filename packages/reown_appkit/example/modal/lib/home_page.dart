@@ -139,12 +139,20 @@ class _MyHomePageState extends State<MyHomePage> {
   SIWEConfig _siweConfig(bool enabled) => SIWEConfig(
         getNonce: () async {
           // this has to be called at the very moment of creating the pairing uri
-          return SIWEUtils.generateNonce();
+          try {
+            debugPrint('[SIWEConfig] getNonce()');
+            final response = await _siweTestService.getNonce();
+            return response['nonce'] as String;
+          } catch (error) {
+            debugPrint('[SIWEConfig] getNonce error: $error');
+            // Fallback patch for testing purposes in case SIWE backend has issues
+            return SIWEUtils.generateNonce();
+          }
         },
         getMessageParams: () async {
           // Provide everything that is needed to construct the SIWE message
           debugPrint('[SIWEConfig] getMessageParams()');
-          final url = _appKitModal!.appKit!.metadata.url;
+          final url = _pairingMetadata().url;
           final uri = Uri.parse(url);
           return SIWEMessageArgs(
             domain: uri.authority,
@@ -161,51 +169,81 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         verifyMessage: (SIWEVerifyMessageArgs args) async {
           // Implement your verifyMessage to authenticate the user after it.
-          debugPrint('[SIWEConfig] verifyMessage()');
-          final chainId = SIWEUtils.getChainIdFromMessage(args.message);
-          final address = SIWEUtils.getAddressFromMessage(args.message);
-          final cacaoSignature = args.cacao != null
-              ? args.cacao!.s
-              : CacaoSignature(
-                  t: CacaoSignature.EIP191,
-                  s: args.signature,
-                );
-          return await SIWEUtils.verifySignature(
-            address,
-            args.message,
-            cacaoSignature,
-            chainId,
-            DartDefines.projectId,
-          );
+          try {
+            debugPrint('[SIWEConfig] verifyMessage()');
+            final payload = args.toJson();
+            final url = _pairingMetadata().url;
+            final uri = Uri.parse(url);
+            final result = await _siweTestService.verifyMessage(
+              payload,
+              domain: uri.authority,
+            );
+            return result['token'] != null;
+          } catch (error) {
+            debugPrint('[SIWEConfig] verifyMessage error: $error');
+            // Fallback patch for testing purposes in case SIWE backend has issues
+            final chainId = SIWEUtils.getChainIdFromMessage(args.message);
+            final address = SIWEUtils.getAddressFromMessage(args.message);
+            final cacaoSignature = args.cacao != null
+                ? args.cacao!.s
+                : CacaoSignature(
+                    t: CacaoSignature.EIP191,
+                    s: args.signature,
+                  );
+            return await SIWEUtils.verifySignature(
+              address,
+              args.message,
+              cacaoSignature,
+              chainId,
+              DartDefines.projectId,
+            );
+          }
         },
         getSession: () async {
           // Return proper session from your Web Service
-          final chainId = _appKitModal.selectedChain?.chainId ?? '1';
-          final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
-            chainId,
-          );
-          final address = _appKitModal.session!.getAddress(namespace)!;
-          return SIWESession(address: address, chains: [chainId]);
+          try {
+            debugPrint('[SIWEConfig] getSession()');
+            final session = await _siweTestService.getSession();
+            final address = session['address']!.toString();
+            final chainId = session['chainId']!.toString();
+            return SIWESession(address: address, chains: [chainId]);
+          } catch (error) {
+            debugPrint('[SIWEConfig] getSession error: $error');
+            // Fallback patch for testing purposes in case SIWE backend has issues
+            final chainId = _appKitModal.selectedChain?.chainId ?? '1';
+            final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
+              chainId,
+            );
+            final address = _appKitModal.session!.getAddress(namespace)!;
+            return SIWESession(address: address, chains: [chainId]);
+          }
         },
         onSignIn: (SIWESession session) {
           // Called after SIWE message is signed and verified
           debugPrint('[SIWEConfig] onSignIn()');
         },
         signOut: () async {
-          debugPrint('[SIWEConfig] signOut()');
           // Called when user taps on disconnect button
-          return true;
+          try {
+            debugPrint('[SIWEConfig] signOut()');
+            final _ = await _siweTestService.signOut();
+            return true;
+          } catch (error) {
+            debugPrint('[SIWEConfig] signOut error: $error');
+            // Fallback patch for testing purposes in case SIWE backend has issues
+            return true;
+          }
         },
         onSignOut: () {
           // Called when disconnecting WalletConnect session was successfull
           debugPrint('[SIWEConfig] onSignOut()');
         },
         enabled: enabled,
-        signOutOnDisconnect: false,
+        signOutOnDisconnect: true,
         signOutOnAccountChange: true,
-        signOutOnNetworkChange: true,
+        signOutOnNetworkChange: false,
         // nonceRefetchIntervalMs: 300000,
-        // sessionRefetchIntervalMs: 300000,R
+        // sessionRefetchIntervalMs: 300000,
       );
 
   void _initializeService(SharedPreferences prefs) async {
@@ -214,7 +252,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
     final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
     final emailWalletValue = prefs.getBool('appkit_email_wallet') ?? true;
-    final siweAuthValue = prefs.getBool('appkit_siwe_auth') ?? true;
+    // final siweAuthValue = prefs.getBool('appkit_siwe_auth') ?? true;
+    final siweAuthValue = false;
 
     ReownAppKitModalNetworks.removeTestNetworks();
 
