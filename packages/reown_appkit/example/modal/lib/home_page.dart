@@ -210,7 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _initializeService(SharedPreferences prefs) async {
     // Clear all shared preferences
-    await prefs.clear();
+    // await prefs.clear();
 
     final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
     final emailWalletValue = prefs.getBool('appkit_email_wallet') ?? true;
@@ -909,8 +909,8 @@ class _PerkGridView extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2, // Adjust the number of columns as needed
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
+            crossAxisSpacing: 70,
+            mainAxisSpacing: 70,
           ),
           itemCount: perkList.length,
           itemBuilder: (context, index) {
