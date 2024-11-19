@@ -54,7 +54,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final overlay = OverlayController(const Duration(milliseconds: 200));
+  // final overlay = OverlayController(const Duration(milliseconds: 200));
+  late OverlayController overlay;
+
   late ReownAppKitModal _appKitModal;
   late SIWESampleWebService _siweTestService;
   late VideoPlayerController _videoController;
@@ -85,7 +87,6 @@ class _MyHomePageState extends State<MyHomePage> {
         _videoController.setLooping(true);
       });
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _toggleOverlay();
       _initializeService(widget.prefs);
     });
   }
@@ -138,20 +139,12 @@ class _MyHomePageState extends State<MyHomePage> {
   SIWEConfig _siweConfig(bool enabled) => SIWEConfig(
         getNonce: () async {
           // this has to be called at the very moment of creating the pairing uri
-          try {
-            debugPrint('[SIWEConfig] getNonce()');
-            final response = await _siweTestService.getNonce();
-            return response['nonce'] as String;
-          } catch (error) {
-            debugPrint('[SIWEConfig] getNonce error: $error');
-            // Fallback patch for testing purposes in case SIWE backend has issues
-            return SIWEUtils.generateNonce();
-          }
+          return SIWEUtils.generateNonce();
         },
         getMessageParams: () async {
           // Provide everything that is needed to construct the SIWE message
           debugPrint('[SIWEConfig] getMessageParams()');
-          final url = _pairingMetadata().url;
+          final url = _appKitModal!.appKit!.metadata.url;
           final uri = Uri.parse(url);
           return SIWEMessageArgs(
             domain: uri.authority,
@@ -168,102 +161,80 @@ class _MyHomePageState extends State<MyHomePage> {
         },
         verifyMessage: (SIWEVerifyMessageArgs args) async {
           // Implement your verifyMessage to authenticate the user after it.
-          try {
-            debugPrint('[SIWEConfig] verifyMessage()');
-            final payload = args.toJson();
-            final url = _pairingMetadata().url;
-            final uri = Uri.parse(url);
-            final result = await _siweTestService.verifyMessage(
-              payload,
-              domain: uri.authority,
-            );
-            return result['token'] != null;
-          } catch (error) {
-            debugPrint('[SIWEConfig] verifyMessage error: $error');
-            // Fallback patch for testing purposes in case SIWE backend has issues
-            final chainId = SIWEUtils.getChainIdFromMessage(args.message);
-            final address = SIWEUtils.getAddressFromMessage(args.message);
-            final cacaoSignature = args.cacao != null
-                ? args.cacao!.s
-                : CacaoSignature(
-                    t: CacaoSignature.EIP191,
-                    s: args.signature,
-                  );
-            return await SIWEUtils.verifySignature(
-              address,
-              args.message,
-              cacaoSignature,
-              chainId,
-              DartDefines.projectId,
-            );
-          }
+          debugPrint('[SIWEConfig] verifyMessage()');
+          final chainId = SIWEUtils.getChainIdFromMessage(args.message);
+          final address = SIWEUtils.getAddressFromMessage(args.message);
+          final cacaoSignature = args.cacao != null
+              ? args.cacao!.s
+              : CacaoSignature(
+                  t: CacaoSignature.EIP191,
+                  s: args.signature,
+                );
+          return await SIWEUtils.verifySignature(
+            address,
+            args.message,
+            cacaoSignature,
+            chainId,
+            DartDefines.projectId,
+          );
         },
         getSession: () async {
           // Return proper session from your Web Service
-          try {
-            debugPrint('[SIWEConfig] getSession()');
-            final session = await _siweTestService.getSession();
-            final address = session['address']!.toString();
-            final chainId = session['chainId']!.toString();
-            return SIWESession(address: address, chains: [chainId]);
-          } catch (error) {
-            debugPrint('[SIWEConfig] getSession error: $error');
-            // Fallback patch for testing purposes in case SIWE backend has issues
-            final address = _appKitModal.session!.address!;
-            final chainId = _appKitModal.session!.chainId;
-            return SIWESession(address: address, chains: [chainId]);
-          }
+          final chainId = _appKitModal.selectedChain?.chainId ?? '1';
+          final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
+            chainId,
+          );
+          final address = _appKitModal.session!.getAddress(namespace)!;
+          return SIWESession(address: address, chains: [chainId]);
         },
         onSignIn: (SIWESession session) {
           // Called after SIWE message is signed and verified
           debugPrint('[SIWEConfig] onSignIn()');
         },
         signOut: () async {
+          debugPrint('[SIWEConfig] signOut()');
           // Called when user taps on disconnect button
-          try {
-            debugPrint('[SIWEConfig] signOut()');
-            final _ = await _siweTestService.signOut();
-            return true;
-          } catch (error) {
-            debugPrint('[SIWEConfig] signOut error: $error');
-            // Fallback patch for testing purposes in case SIWE backend has issues
-            return true;
-          }
+          return true;
         },
         onSignOut: () {
           // Called when disconnecting WalletConnect session was successfull
           debugPrint('[SIWEConfig] onSignOut()');
         },
         enabled: enabled,
-        signOutOnDisconnect: true,
+        signOutOnDisconnect: false,
         signOutOnAccountChange: true,
-        signOutOnNetworkChange: false,
+        signOutOnNetworkChange: true,
         // nonceRefetchIntervalMs: 300000,
-        // sessionRefetchIntervalMs: 300000,
+        // sessionRefetchIntervalMs: 300000,R
       );
 
   void _initializeService(SharedPreferences prefs) async {
+    // Clear all shared preferences
+    await prefs.clear();
+
     final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
     final emailWalletValue = prefs.getBool('appkit_email_wallet') ?? true;
     final siweAuthValue = prefs.getBool('appkit_siwe_auth') ?? true;
 
     // See https://docs.reown.com/appkit/flutter/core/custom-chains
-    final testNetworks = ReownAppKitModalNetworks.test['eip155'] ?? [];
+    // final testNetworks = ReownAppKitModalNetworks.test['eip155'] ?? [];
+    // final testNetworks = [];
 
-    // Add this network as the first entry
-    final etherlink = ReownAppKitModalNetworkInfo(
-      name: 'Etherlink',
-      chainId: '42793',
-      currency: 'XTZ',
-      rpcUrl: 'https://node.mainnet.etherlink.com',
-      explorerUrl: 'https://etherlink.io',
-      chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
-      isTestNetwork: false,
-    );
+    // // Add this network as the first entry
+    // final etherlink = ReownAppKitModalNetworkInfo(
+    //   name: 'Etherlink',
+    //   chainId: '42793',
+    //   currency: 'XTZ',
+    //   rpcUrl: 'https://node.mainnet.etherlink.com',
+    //   explorerUrl: 'https://etherlink.io',
+    //   chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
+    //   isTestNetwork: false,
+    // );
 
-    testNetworks.insert(0, etherlink); // Insert at the beginning
+    // testNetworks.insert(0, etherlink); // Insert at the beginning
 
-    ReownAppKitModalNetworks.addNetworks('eip155', testNetworks);
+    // ReownAppKitModalNetworks.addSupportedNetworks(
+    //     'eip155', testNetworks.cast<ReownAppKitModalNetworkInfo>());
 
     //add etherlink
 
@@ -312,6 +283,14 @@ class _MyHomePageState extends State<MyHomePage> {
         // },
         // MORE WALLETS https://explorer.walletconnect.com/?type=wallet&chains=eip155%3A1
       );
+
+      overlay = OverlayController(
+        const Duration(milliseconds: 200),
+        appKitModal: _appKitModal,
+      );
+
+      _toggleOverlay();
+
       setState(() => _initialized = true);
     } on ReownAppKitModalException catch (e) {
       debugPrint('⛔️ ${e.message}');
@@ -327,6 +306,7 @@ class _MyHomePageState extends State<MyHomePage> {
     _appKitModal.onSessionExpireEvent.subscribe(_onSessionExpired);
     _appKitModal.onSessionUpdateEvent.subscribe(_onSessionUpdate);
     _appKitModal.onSessionEventEvent.subscribe(_onSessionEvent);
+
     // relayClient subscriptions
     _appKitModal.appKit!.core.relayClient.onRelayClientConnect.subscribe(
       _onRelayClientConnect,
@@ -388,7 +368,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _handlePendingAction() {
     if (_pendingAction != null && _appKitModal.isConnected) {
-      final address = _appKitModal.session!.address!;
+      final chainId = _appKitModal.selectedChain?.chainId ?? '1';
+      final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
+        chainId,
+      );
+      final address = _appKitModal.session!.getAddress(namespace)!;
       final email = _appKitModal.session!.email;
       switch (_pendingAction) {
         case 'mint':
@@ -479,6 +463,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onModalUpdate(ModalConnect? event) {
+    // _appKitModal.appKit!.authKeys.storage.deleteAll();
+
     setState(() {});
   }
 
@@ -539,29 +525,31 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _notifyWalletConnected(
       ReownAppKitModalSession? session, DateTime timestamp) async {
     debugPrint('THIS WOULD BE SDK CALL');
+    debugPrint('Session: ${session?.email}');
 
     if (session == null) return;
 
     try {
-      final response = await http.post(
-        Uri.parse('YOUR_API_ENDPOINT'), // Replace with your actual endpoint
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'walletAddress': session.address,
-          'email': session.email,
-          'timestamp': timestamp.toIso8601String(),
-          'chainId': session.chainId,
-        }),
-      );
+      // final response = await http.post(
+      //   Uri.parse('YOUR_API_ENDPOINT'), // Replace with your actual endpoint
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      //   body: jsonEncode({
+      //     'walletAddress':
+      //         session.getAddress(_appKitModal.selectedChain?.chainId ?? '1'),
+      //     'email': session.email,
+      //     'timestamp': timestamp.toIso8601String(),
+      //     'chainId': session.chainId,
+      //   }),
+      // );
 
-      if (response.statusCode == 200) {
-        debugPrint('Successfully notified wallet connection');
-      } else {
-        debugPrint(
-            'Failed to notify wallet connection: ${response.statusCode}');
-      }
+      // if (response.statusCode == 200) {
+      //   debugPrint('Successfully notified wallet connection');
+      // } else {
+      //   debugPrint(
+      //       'Failed to notify wallet connection: ${response.statusCode}');
+      // }
     } catch (e) {
       debugPrint('Error notifying wallet connection: $e');
     }
@@ -728,31 +716,34 @@ class _ButtonsView extends StatelessWidget {
 
             // UNCOMMENT TO USE A CUSTOM BUTTON
             // TO HIDE AppKitModalConnectButton BUT STILL RENDER IT (NEEDED) JUST USE SizedBox.shrink()
-            custom: ElevatedButton(
-              onPressed: () {
-                if (!appKit.isConnected) {
-                  (context.findAncestorStateOfType<_MyHomePageState>())
-                      ?._pendingAction = 'loyalty';
-                  appKit.openModalView(ReownAppKitModalMainWalletsPage());
-                } else {
-                  final address = appKit.session!.address!;
-                  (context.findAncestorStateOfType<_MyHomePageState>())
-                      ?.getLoyalty(address);
-                }
-              },
-              child: appKit.isConnected
-                  ? Text('${appKit.session!.address!.substring(0, 7)}...')
-                  : const Text('Get loyalty offers'),
-            ),
+            // custom: ElevatedButton(
+            //   onPressed: () {
+            //     if (!appKit.isConnected) {
+            //       (context.findAncestorStateOfType<_MyHomePageState>())
+            //           ?._pendingAction = 'loyalty';
+            //       appKit.openModalView(ReownAppKitModalMainWalletsPage());
+            //     } else {
+            //       final address = appKit.session!
+            //           .getAddress(appKit.selectedChain?.chainId ?? '1');
+            //       (context.findAncestorStateOfType<_MyHomePageState>())
+            //           ?.getLoyalty(address!);
+            //     }
+            //   },
+            //   child: appKit.isConnected
+            //       ? Text(
+            //           '${appKit.session!.getAddress(appKit.selectedChain?.chainId ?? '1')?.substring(0, 7)}...')
+            //       : const Text('Get loyalty offers'),
+            // ),
           ),
 
         //if connected show "Display offers" button
         if (appKit.isConnected)
           ElevatedButton(
             onPressed: () {
-              final address = appKit.session!.address!;
+              final address = appKit.session!
+                  .getAddress(appKit.selectedChain?.chainId ?? '1');
               (context.findAncestorStateOfType<_MyHomePageState>())
-                  ?.getLoyalty(address);
+                  ?.getLoyalty(address!);
             },
             child: const Text('Show Perks'),
           ),
@@ -780,7 +771,7 @@ class _ConnectedView extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        AppKitModalAccountButton(appKit: appKit),
+        AppKitModalAccountButton(appKitModal: appKit),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1000,10 +991,11 @@ class _VideoControlsState extends State<_VideoControls>
         appKit.openModalView(ReownAppKitModalMainWalletsPage());
       }
     } else {
-      final address = appKit.session!.address!;
+      final address =
+          appKit.session!.getAddress(appKit.selectedChain?.chainId ?? '1');
       final email = appKit.session!.email;
       (context.findAncestorStateOfType<_MyHomePageState>())
-          ?.mintToken(address, email);
+          ?.mintToken(address!, email);
 
       // Show success animation and slide out
       showSuccess();
