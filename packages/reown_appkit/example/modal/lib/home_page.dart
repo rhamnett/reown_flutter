@@ -62,6 +62,8 @@ class _MyHomePageState extends State<MyHomePage> {
   late VideoPlayerController _videoController;
   bool _initialized = false;
 
+  bool _showSuccess = false;
+
   String? _pendingAction;
 
   // Add this list to manage NFTs
@@ -165,6 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // Create SIWE message to be signed.
           // You can use our provided formatMessage() method of implement your own
           debugPrint('[SIWEConfig] createMessage()');
+          debugPrint(args.toJson().toString());
           return SIWEUtils.formatMessage(args);
         },
         verifyMessage: (SIWEVerifyMessageArgs args) async {
@@ -259,24 +262,22 @@ class _MyHomePageState extends State<MyHomePage> {
     ReownAppKitModalNetworks.removeTestNetworks();
 
     ReownAppKitModalNetworks.removeSupportedNetworks('solana');
-    // final testNetworks = <ReownAppKitModalNetworkInfo>[];
+    final testNetworks = <ReownAppKitModalNetworkInfo>[];
 
-    // // Add this network as the first entry
-    // final etherlink = ReownAppKitModalNetworkInfo(
-    //   name: 'Etherlink',
-    //   chainId: '42793',
-    //   currency: 'XTZ',
-    //   rpcUrl: 'https://node.mainnet.etherlink.com',
-    //   explorerUrl: 'https://etherlink.io',
-    //   chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
-    //   isTestNetwork: false,
-    // );
+    // Add this network as the first entry
+    final etherlink = ReownAppKitModalNetworkInfo(
+      name: 'Etherlink',
+      chainId: '42793',
+      currency: 'XTZ',
+      rpcUrl: 'https://node.mainnet.etherlink.com',
+      explorerUrl: 'https://etherlink.io',
+      chainIcon: 'https://cryptologos.cc/logos/tezos-xtz-logo.png',
+      isTestNetwork: false,
+    );
 
-    // testNetworks.insert(0, etherlink); // Insert at the beginning
+    testNetworks.insert(0, etherlink); // Insert at the beginning
 
-    // ReownAppKitModalNetworks.addSupportedNetworks('eip155', testNetworks);
-
-    //add etherlink
+    ReownAppKitModalNetworks.addSupportedNetworks('eip155', testNetworks);
 
     try {
       _appKitModal = ReownAppKitModal(
@@ -477,8 +478,8 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       final newNftNumber = _nftList.length + 1;
       _nftList.add('NFT #$newNftNumber');
+      _showSuccess = true;
     });
-
     // Optionally, show a success message
     // showTextToast(text: 'NFT Minted Successfully!', context: context);
   }
@@ -533,11 +534,11 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
     debugPrint('[ExampleApp] _onModalConnect ${event?.session.toJson()}');
 
-    // // notify m1nty API that a wallet has connected
-    // _notifyWalletConnected(event?.session, DateTime.now());
+    // Notify m1nty API that a wallet has connected
+    _notifyWalletConnected(event?.session, DateTime.now());
 
-    // // Handle pending action immediately after connection
-    // _handlePendingAction();
+    // Handle pending action immediately after connection
+    _handlePendingAction();
   }
 
   void _onModalUpdate(ModalConnect? event) {
@@ -692,6 +693,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                   _VideoControls(
                                     controller: _videoController,
                                     appKit: _appKitModal,
+                                    showSuccess: _showSuccess,
+                                    onSuccessShown: () {
+                                      setState(() {
+                                        _showSuccess = false; // Reset the flag
+                                      });
+                                    },
                                   ),
                                 ],
                               ),
@@ -800,31 +807,28 @@ class _ButtonsView extends StatelessWidget {
         //   // ),
         // ),
         // const SizedBox.square(dimension: 6.0),
-        if (!appKit.isConnected)
-          AppKitModalConnectButton(
+        AppKitModalConnectButton(
             appKit: appKit,
-
             // UNCOMMENT TO USE A CUSTOM BUTTON
             // TO HIDE AppKitModalConnectButton BUT STILL RENDER IT (NEEDED) JUST USE SizedBox.shrink()
-            // custom: ElevatedButton(
-            //   onPressed: () {
-            //     if (!appKit.isConnected) {
-            //       (context.findAncestorStateOfType<_MyHomePageState>())
-            //           ?._pendingAction = 'loyalty';
-            //       appKit.openModalView(ReownAppKitModalMainWalletsPage());
-            //     } else {
-            //       final address = appKit.session!
-            //           .getAddress(appKit.selectedChain?.chainId ?? '1');
-            //       (context.findAncestorStateOfType<_MyHomePageState>())
-            //           ?.getLoyalty(address!);
-            //     }
-            //   },
-            //   child: appKit.isConnected
-            //       ? Text(
-            //           '${appKit.session!.getAddress(appKit.selectedChain?.chainId ?? '1')?.substring(0, 7)}...')
-            //       : const Text('Get loyalty offers'),
-            // ),
-          ),
+            custom: ElevatedButton(
+              onPressed: () {
+                if (!appKit.isConnected) {
+                  (context.findAncestorStateOfType<_MyHomePageState>())
+                      ?._pendingAction = 'loyalty';
+                  appKit.openModalView(ReownAppKitModalMainWalletsPage());
+                } else {
+                  final address = appKit.session!
+                      .getAddress(appKit.selectedChain?.chainId ?? '1');
+                  (context.findAncestorStateOfType<_MyHomePageState>())
+                      ?.getLoyalty(address!);
+                }
+              },
+              child: appKit.isConnected
+                  ? Text(
+                      '${appKit.session!.getAddress(appKit.selectedChain?.chainId ?? '1')?.substring(0, 7)}...')
+                  : const Text('Get loyalty offers'),
+            )), // ),
 
         //if connected show "Display offers" button
         if (appKit.isConnected)
@@ -996,8 +1000,8 @@ class _PerkGridView extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2, // Adjust the number of columns as needed
-            crossAxisSpacing: 70,
-            mainAxisSpacing: 70,
+            crossAxisSpacing: 30,
+            mainAxisSpacing: 30,
           ),
           itemCount: perkList.length,
           itemBuilder: (context, index) {
@@ -1050,10 +1054,15 @@ class _VideoControls extends StatefulWidget {
   const _VideoControls({
     required this.controller,
     required this.appKit,
-  });
+    required this.showSuccess,
+    required this.onSuccessShown,
+    Key? key,
+  }) : super(key: key);
 
   final VideoPlayerController controller;
   final ReownAppKitModal appKit;
+  final bool showSuccess;
+  final VoidCallback onSuccessShown;
 
   @override
   State<_VideoControls> createState() => _VideoControlsState();
@@ -1087,6 +1096,14 @@ class _VideoControlsState extends State<_VideoControls>
   }
 
   @override
+  void didUpdateWidget(covariant _VideoControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.showSuccess && widget.showSuccess) {
+      showSuccess();
+    }
+  }
+
+  @override
   void dispose() {
     _overlayController.dispose();
     super.dispose();
@@ -1108,9 +1125,9 @@ class _VideoControlsState extends State<_VideoControls>
       final address = appKit.session?.getAddress(namespace);
       final email = appKit.session?.email;
 
-      if (address != null) {
-        (context.findAncestorStateOfType<_MyHomePageState>())
-            ?.mintToken(address, email!);
+      if (address != null && email != null) {
+        final homeState = context.findAncestorStateOfType<_MyHomePageState>();
+        homeState?.mintToken(address, email);
         // Show success animation and slide out
         showSuccess();
       } else {
@@ -1132,6 +1149,7 @@ class _VideoControlsState extends State<_VideoControls>
         _overlayController.reverse().then((_) {
           if (mounted) {
             setState(() => _showSuccess = false);
+            widget.onSuccessShown(); // Notify parent to reset the flag
           }
         });
       }
