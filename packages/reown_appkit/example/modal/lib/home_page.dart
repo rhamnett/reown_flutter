@@ -646,6 +646,15 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  /// Retrieves the wallet address based on the selected chain's namespace.
+  String? getWalletAddress() {
+    final chainId = _appKitModal.selectedChain?.chainId ?? '1';
+    final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(chainId);
+    debugPrint('Namespace: $namespace');
+
+    return _appKitModal.session?.getAddress(namespace);
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_initialized) {
@@ -793,50 +802,35 @@ class _ButtonsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final homeState = context.findAncestorStateOfType<_MyHomePageState>();
+    final address = homeState?.getWalletAddress();
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // AppKitModalNetworkSelectButton(
-        //   appKit: appKit,
-        //   // UNCOMMENT TO USE A CUSTOM BUTTON
-        //   // custom: ElevatedButton(
-        //   //   onPressed: () {
-        //   //     appKit.openNetworksView();
-        //   //   },
-        //   //   child: Text(appKit.selectedChain?.name ?? 'OPEN CHAINS'),
-        //   // ),
-        // ),
-        // const SizedBox.square(dimension: 6.0),
         AppKitModalConnectButton(
-            appKit: appKit,
-            // UNCOMMENT TO USE A CUSTOM BUTTON
-            // TO HIDE AppKitModalConnectButton BUT STILL RENDER IT (NEEDED) JUST USE SizedBox.shrink()
-            custom: ElevatedButton(
-              onPressed: () {
-                if (!appKit.isConnected) {
-                  (context.findAncestorStateOfType<_MyHomePageState>())
-                      ?._pendingAction = 'loyalty';
-                  appKit.openModalView(ReownAppKitModalMainWalletsPage());
-                } else {
-                  final address = appKit.session!
-                      .getAddress(appKit.selectedChain?.chainId ?? '1');
-                  (context.findAncestorStateOfType<_MyHomePageState>())
-                      ?.getLoyalty(address!);
-                }
-              },
-              child: appKit.isConnected
-                  ? Text(
-                      '${appKit.session!.getAddress(appKit.selectedChain?.chainId ?? '1')?.substring(0, 7)}...')
-                  : const Text('Get loyalty offers'),
-            )), // ),
-
-        //if connected show "Display offers" button
+          appKit: appKit,
+          custom: ElevatedButton(
+            onPressed: () {
+              if (!appKit.isConnected) {
+                homeState?._pendingAction = 'loyalty';
+                appKit.openModalView(ReownAppKitModalMainWalletsPage());
+              } else if (address != null) {
+                homeState?.getLoyalty(address);
+              }
+            },
+            child: address != null
+                ? Text('${address.substring(0, 7)}...')
+                : const Text('Get loyalty offers'),
+          ),
+        ),
+        // If connected, show the "Show Perks" button
         if (appKit.isConnected)
           ElevatedButton(
             onPressed: () {
               debugPrint('Selected Chain ID: ${appKit.selectedChain?.chainId}');
               debugPrint(
-                  'Session: ${appKit.session?.toJson()}'); // Add this to see full session data
+                  'Session: ${appKit.session?.toJson()}'); // Log full session data
 
               final chainId = appKit.selectedChain?.chainId ?? '1';
               final namespace =
@@ -847,11 +841,9 @@ class _ButtonsView extends StatelessWidget {
               debugPrint('Address from namespace: $address');
 
               if (address != null) {
-                (context.findAncestorStateOfType<_MyHomePageState>())
-                    ?.getLoyalty(address);
+                homeState?.getLoyalty(address);
               } else {
                 debugPrint('Error: Could not get wallet address');
-                // Optionally show an error message to the user
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Could not get wallet address'),
