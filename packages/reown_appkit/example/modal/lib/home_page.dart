@@ -55,6 +55,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   // final overlay = OverlayController(const Duration(milliseconds: 200));
+  final M1NTY_ACCOUNT_ID = 'e44dce98-3e47-4eef-852e-2a9c91d34915';
   late OverlayController overlay;
 
   late ReownAppKitModal _appKitModal;
@@ -253,8 +254,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // Clear all shared preferences
     // await prefs.clear();
 
-    // final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
-    final analyticsValue = false;
+    final analyticsValue = prefs.getBool('appkit_analytics') ?? true;
     final emailWalletValue = prefs.getBool('appkit_email_wallet') ?? true;
     // final siweAuthValue = prefs.getBool('appkit_siwe_auth') ?? true;
     final siweAuthValue = false;
@@ -609,38 +609,39 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _notifyWalletConnected(
       ReownAppKitModalSession? session, DateTime timestamp) async {
+    final address = getWalletAddress();
+    debugPrint('NOTIFY CONNECT..... ${address} ');
     debugPrint('THIS WOULD BE SDK CALL');
-
-    if (session != null) return;
-
-    final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
-      session?.chainId ?? '1',
-    );
-    debugPrint('Session: ${session?.getAddress(namespace)}');
 
     if (session == null) return;
 
-    try {
-      // final response = await http.post(
-      //   Uri.parse('YOUR_API_ENDPOINT'), // Replace with your actual endpoint
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: jsonEncode({
-      //     'walletAddress':
-      //         session.getAddress(_appKitModal.selectedChain?.chainId ?? '1'),
-      //     'email': session.email,
-      //     'timestamp': timestamp.toIso8601String(),
-      //     'chainId': session.chainId,
-      //   }),
-      // );
+    final namespace = ReownAppKitModalNetworks.getNamespaceForChainId(
+      session.chainId,
+    );
+    debugPrint('Session: ${session.getAddress(namespace)}');
 
-      // if (response.statusCode == 200) {
-      //   debugPrint('Successfully notified wallet connection');
-      // } else {
-      //   debugPrint(
-      //       'Failed to notify wallet connection: ${response.statusCode}');
-      // }
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://ki7luz9ns2.execute-api.eu-west-1.amazonaws.com/prod/log-wallet'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'account': M1NTY_ACCOUNT_ID,
+          'address': address,
+          'email': session.email,
+          'timestamp': timestamp.toIso8601String(),
+          'chainId': session.chainId,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        debugPrint('Successfully notified wallet connection');
+      } else {
+        debugPrint(
+            'Failed to notify wallet connection: ${response.statusCode}');
+      }
     } catch (e) {
       debugPrint('Error notifying wallet connection: $e');
     }
