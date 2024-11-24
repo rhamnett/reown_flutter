@@ -155,6 +155,7 @@ class _MyHomePageState extends State<MyHomePage> {
         getMessageParams: () async {
           // Provide everything that is needed to construct the SIWE message
           debugPrint('[SIWEConfig] getMessageParams()');
+          debugPrint(MethodsConstants.allMethods.toString());
           final url = _pairingMetadata().url;
           final uri = Uri.parse(url);
           return SIWEMessageArgs(
@@ -168,39 +169,39 @@ class _MyHomePageState extends State<MyHomePage> {
           // Create SIWE message to be signed.
           // You can use our provided formatMessage() method of implement your own
           debugPrint('[SIWEConfig] createMessage()');
-          debugPrint(args.toJson().toString());
           return SIWEUtils.formatMessage(args);
         },
         verifyMessage: (SIWEVerifyMessageArgs args) async {
-          // Implement your verifyMessage to authenticate the user after it.
           try {
             debugPrint('[SIWEConfig] verifyMessage()');
-            final payload = args.toJson();
+            debugPrint('Message: ${args.message}');
+            debugPrint('Signature: ${args.signature}');
+
+            final message = args.message;
+            final signature = args.signature;
+
+            if (message == null || signature == null) {
+              debugPrint('[SIWEConfig] Message or signature is null');
+              return false;
+            }
+
+            final payload = {
+              'message': message,
+              'signature': signature,
+            };
+
             final url = _pairingMetadata().url;
             final uri = Uri.parse(url);
             final result = await _siweTestService.verifyMessage(
               payload,
               domain: uri.authority,
             );
+
+            debugPrint('Verification result: $result');
             return result['token'] != null;
           } catch (error) {
             debugPrint('[SIWEConfig] verifyMessage error: $error');
-            // Fallback patch for testing purposes in case SIWE backend has issues
-            final chainId = SIWEUtils.getChainIdFromMessage(args.message);
-            final address = SIWEUtils.getAddressFromMessage(args.message);
-            final cacaoSignature = args.cacao != null
-                ? args.cacao!.s
-                : CacaoSignature(
-                    t: CacaoSignature.EIP191,
-                    s: args.signature,
-                  );
-            return await SIWEUtils.verifySignature(
-              address,
-              args.message,
-              cacaoSignature,
-              chainId,
-              DartDefines.projectId,
-            );
+            return false;
           }
         },
         getSession: () async {
@@ -260,9 +261,8 @@ class _MyHomePageState extends State<MyHomePage> {
     // final siweAuthValue = false;
 
     ReownAppKitModalNetworks.removeTestNetworks();
-
     ReownAppKitModalNetworks.removeSupportedNetworks('solana');
-    final testNetworks = <ReownAppKitModalNetworkInfo>[];
+    // final testNetworks = <ReownAppKitModalNetworkInfo>[];
 
     // Add this network as the first entry
     final etherlink = ReownAppKitModalNetworkInfo(
@@ -275,9 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
       isTestNetwork: false,
     );
 
-    testNetworks.insert(0, etherlink); // Insert at the beginning
-
-    ReownAppKitModalNetworks.addSupportedNetworks('eip155', testNetworks);
+    ReownAppKitModalNetworks.addSupportedNetworks('eip155', [etherlink]);
 
     try {
       _appKitModal = ReownAppKitModal(
@@ -628,6 +626,7 @@ class _MyHomePageState extends State<MyHomePage> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
+          'action': 'connect',
           'account': M1NTY_ACCOUNT_ID,
           'address': address,
           'email': session.email,
@@ -809,6 +808,9 @@ class _ButtonsView extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
+        AppKitModalAccountButton(
+            appKitModal: appKit, custom: const SizedBox.shrink()),
+
         AppKitModalConnectButton(
           appKit: appKit,
           custom: ElevatedButton(

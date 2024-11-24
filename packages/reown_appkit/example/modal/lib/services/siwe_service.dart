@@ -74,24 +74,64 @@ class SIWESampleWebService {
     required String domain,
   }) async {
     try {
+      // Construct the URI with query parameters
       final uri = Uri.parse('${DartDefines.authApiUrl}/auth/v1/authenticate');
+
+      // Log the payload and URI for debugging
+      debugPrint('[SIWESERVICE] Payload: ${jsonEncode(payload)}');
+      debugPrint('[SIWESERVICE] URI: $uri');
+
+      // Perform the HTTP POST request
       final response = await http.post(
-        uri.replace(queryParameters: {'domain': domain}),
+        uri,
         headers: _headers,
         body: jsonEncode(payload),
       );
-      debugPrint('[SIWESERVICE] verifyMessage() => ${response.body}');
+
+      // Log the raw response for debugging
+      debugPrint('[SIWESERVICE] verifyMessage() Response: ${response.body}');
+
+      // Parse the response
       final authenticateRes = jsonDecode(response.body) as Map<String, dynamic>;
-      final newToken = authenticateRes['token'] as String;
-      _headers!['Authorization'] = 'Bearer $newToken';
-      await _persistHeaders();
-      // Persist the newToken so it can be used again with getSession() even if the user terminated the app
+
+      // Check if the response includes a new token
+      if (authenticateRes.containsKey('token')) {
+        final newToken = authenticateRes['token'] as String;
+        _headers!['Authorization'] = 'Bearer $newToken';
+        await _persistHeaders();
+      }
+
       return authenticateRes;
     } catch (error) {
-      debugPrint('[SIWESERVICE] ⛔️ verifyMessage() => ${error.toString()}');
+      // Log and rethrow the error for debugging
+      debugPrint('[SIWESERVICE] ⛔️ verifyMessage() Error: ${error.toString()}');
       rethrow;
     }
   }
+
+  // Future<Map<String, dynamic>> verifyMessage(
+  //   Map<String, dynamic> payload, {
+  //   required String domain,
+  // }) async {
+  //   try {
+  //     final uri = Uri.parse('${DartDefines.authApiUrl}/auth/v1/authenticate');
+  //     final response = await http.post(
+  //       uri.replace(queryParameters: {'domain': domain}),
+  //       headers: _headers,
+  //       body: jsonEncode(payload),
+  //     );
+  //     debugPrint('[SIWESERVICE] verifyMessage() => ${response.body}');
+  //     final authenticateRes = jsonDecode(response.body) as Map<String, dynamic>;
+  //     final newToken = authenticateRes['token'] as String;
+  //     _headers!['Authorization'] = 'Bearer $newToken';
+  //     await _persistHeaders();
+  //     // Persist the newToken so it can be used again with getSession() even if the user terminated the app
+  //     return authenticateRes;
+  //   } catch (error) {
+  //     debugPrint('[SIWESERVICE] ⛔️ verifyMessage() => ${error.toString()}');
+  //     rethrow;
+  //   }
+  // }
 
   Future<Map<String, dynamic>> updateUser(Map<String, dynamic> data) async {
     try {
